@@ -159,10 +159,10 @@ Focus on:
 
   } catch (error) {
     console.error('Transcription error:', error);
-    
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: error.message || String(error), // Include error message
+        stack: error.stack || null,           // Optionally include stack trace
         transcript: 'Error during transcription',
         anomalies: [],
         suggestions: [],
