@@ -5,36 +5,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Search, Clock, AlertTriangle, Lightbulb, FileAudio } from "lucide-react";
-
-interface SpeakerSegment {
-  speaker: 'Caller' | 'Receiver';
-  text: string;
-  timestamp: string;
-}
-
-interface CallAnalysis {
-  objective: string;
-  transcript: SpeakerSegment[];
-  anomalies: {
-    caller: string[];
-    receiver: string[];
-  };
-  conclusion: string;
-  suggestions: string[];
-  score: number;
-  scoreReasoning: string;
-}
-
-interface TranscriptionData {
-  id: string;
-  transcript: string;
-  timestamp: string;
-  anomalies: string[];
-  suggestions: string[];
-  duration: number;
-  status: 'processing' | 'completed' | 'error';
-  analysis?: CallAnalysis;
-}
+import { TranscriptionData } from "@/types/transcription";
 
 interface CallHistoryProps {
   transcriptions: TranscriptionData[];
