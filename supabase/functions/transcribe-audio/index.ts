@@ -170,11 +170,18 @@ Ensure timestamps are estimated based on conversation flow if not available in t
 
     try {
       const analysisResult = await analysisResponse.json();
-      const analysisContent = analysisResult.choices[0]?.message?.content;
+      let analysisContent = analysisResult.choices[0]?.message?.content;
       
       console.log('Raw analysis response:', analysisContent);
       
-      analysis = JSON.parse(analysisContent);
+      // Remove markdown code block formatting if present
+      if (analysisContent.includes('```json')) {
+        analysisContent = analysisContent.replace(/```json\s*/, '').replace(/\s*```$/, '');
+      } else if (analysisContent.includes('```')) {
+        analysisContent = analysisContent.replace(/```\s*/, '').replace(/\s*```$/, '');
+      }
+      
+      analysis = JSON.parse(analysisContent.trim());
       
       // Extract legacy format for backward compatibility
       anomalies = [...(analysis.anomalies.caller || []), ...(analysis.anomalies.receiver || [])];
