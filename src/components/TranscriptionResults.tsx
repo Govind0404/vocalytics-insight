@@ -6,14 +6,34 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Download, AlertTriangle, Lightbulb, Clock } from "lucide-react";
 
+interface SpeakerSegment {
+  speaker: 'Caller' | 'Receiver';
+  text: string;
+  timestamp: string;
+}
+
+interface CallAnalysis {
+  objective: string;
+  transcript: SpeakerSegment[];
+  anomalies: {
+    caller: string[];
+    receiver: string[];
+  };
+  conclusion: string;
+  suggestions: string[];
+  score: number;
+  scoreReasoning: string;
+}
+
 interface TranscriptionData {
   id: string;
   transcript: string;
-  timestamp: Date;
+  timestamp: string;
   anomalies: string[];
   suggestions: string[];
   duration: number;
   status: 'processing' | 'completed' | 'error';
+  analysis?: CallAnalysis;
 }
 
 interface TranscriptionResultsProps {
@@ -45,7 +65,7 @@ export const TranscriptionResults = ({ transcription }: TranscriptionResultsProp
 Call Transcription Report
 ========================
 
-Timestamp: ${transcription.timestamp.toLocaleString()}
+Timestamp: ${new Date(transcription.timestamp).toLocaleString()}
 Duration: ${Math.floor(transcription.duration / 60)}:${(transcription.duration % 60).toString().padStart(2, '0')}
 Status: ${transcription.status}
 
@@ -109,7 +129,7 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
               <CardDescription className="flex items-center gap-4 mt-2">
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
-                  {transcription.timestamp.toLocaleString()}
+                  {new Date(transcription.timestamp).toLocaleString()}
                 </span>
                 <span>Duration: {formatDuration(transcription.duration)}</span>
               </CardDescription>

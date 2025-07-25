@@ -9,7 +9,7 @@ const Index = () => {
             Call Transcription & Analysis
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Advanced AI-powered call transcription with real-time anomaly detection and intelligent suggestions
+            Comprehensive AI-powered call analysis with speaker diarization, anomaly detection, and quality scoring
           </p>
         </header>
         

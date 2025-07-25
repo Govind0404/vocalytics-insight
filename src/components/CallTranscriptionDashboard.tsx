@@ -4,16 +4,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AudioUploader } from "./AudioUploader";
 import { LiveRecorder } from "./LiveRecorder";
 import { TranscriptionResults } from "./TranscriptionResults";
+import { ComprehensiveCallAnalysis } from "./ComprehensiveCallAnalysis";
 import { CallHistory } from "./CallHistory";
+
+interface SpeakerSegment {
+  speaker: 'Caller' | 'Receiver';
+  text: string;
+  timestamp: string;
+}
+
+interface CallAnalysis {
+  objective: string;
+  transcript: SpeakerSegment[];
+  anomalies: {
+    caller: string[];
+    receiver: string[];
+  };
+  conclusion: string;
+  suggestions: string[];
+  score: number;
+  scoreReasoning: string;
+}
 
 interface TranscriptionData {
   id: string;
   transcript: string;
-  timestamp: Date;
+  timestamp: string;
   anomalies: string[];
   suggestions: string[];
   duration: number;
   status: 'processing' | 'completed' | 'error';
+  analysis?: CallAnalysis;
 }
 
 export const CallTranscriptionDashboard = () => {
@@ -24,11 +45,12 @@ export const CallTranscriptionDashboard = () => {
     const newTranscription: TranscriptionData = {
       id: Date.now().toString(),
       transcript: data.transcript || '',
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
       anomalies: data.anomalies || [],
       suggestions: data.suggestions || [],
       duration: data.duration || 0,
-      status: data.status || 'processing'
+      status: data.status || 'processing',
+      analysis: data.analysis
     };
     
     setTranscriptions(prev => [newTranscription, ...prev]);
@@ -91,10 +113,19 @@ export const CallTranscriptionDashboard = () => {
       </Tabs>
       
       {activeTranscription && (
-        <TranscriptionResults 
-          transcription={activeTranscription}
-          onUpdate={(updates) => updateTranscription(activeTranscription.id, updates)}
-        />
+        <>
+          {activeTranscription.analysis ? (
+            <ComprehensiveCallAnalysis 
+              transcription={activeTranscription}
+              onUpdate={(updates) => updateTranscription(activeTranscription.id, updates)}
+            />
+          ) : (
+            <TranscriptionResults 
+              transcription={activeTranscription}
+              onUpdate={(updates) => updateTranscription(activeTranscription.id, updates)}
+            />
+          )}
+        </>
       )}
     </div>
   );

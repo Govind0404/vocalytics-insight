@@ -21,12 +21,12 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
   const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      // Validate file type
-      const validTypes = ['audio/wav', 'audio/mp3', 'audio/mpeg', 'audio/m4a', 'audio/webm'];
+      // Validate file type - only WAV and MP3
+      const validTypes = ['audio/wav', 'audio/mp3', 'audio/mpeg'];
       if (!validTypes.includes(selectedFile.type)) {
         toast({
           title: "Invalid file type",
-          description: "Please upload a valid audio file (WAV, MP3, M4A, or WebM)",
+          description: "Please upload only WAV or MP3 audio files",
           variant: "destructive"
         });
         return;
@@ -116,13 +116,14 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
 
       setProgress(100);
 
-      // Process the response
+      // Process the response with full analysis
       onTranscriptionStart({
         status: 'completed',
         transcript: data.transcript || 'No transcript available',
         anomalies: data.anomalies || [],
         suggestions: data.suggestions || [],
-        duration: data.duration || 0
+        duration: data.duration || 0,
+        analysis: data.analysis || null
       });
 
       toast({
@@ -174,12 +175,12 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
               Drag and drop your audio file here
             </Label>
             <p className="text-sm text-muted-foreground mt-2 mb-4">
-              or click to browse (WAV, MP3, M4A, WebM - max 50MB)
+              or click to browse (WAV or MP3 only - max 50MB)
             </p>
             <Input
               id="audio-upload"
               type="file"
-              accept="audio/*"
+              accept=".wav,.mp3"
               onChange={handleFileSelect}
               className="hidden"
             />

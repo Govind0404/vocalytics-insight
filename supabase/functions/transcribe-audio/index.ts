@@ -12,11 +12,31 @@ interface TranscriptionRequest {
   fileType: string;
 }
 
+interface SpeakerSegment {
+  speaker: 'Caller' | 'Receiver';
+  text: string;
+  timestamp: string;
+}
+
+interface CallAnalysis {
+  objective: string;
+  transcript: SpeakerSegment[];
+  anomalies: {
+    caller: string[];
+    receiver: string[];
+  };
+  conclusion: string;
+  suggestions: string[];
+  score: number;
+  scoreReasoning: string;
+}
+
 interface TranscriptionResponse {
   transcript: string;
   anomalies: string[];
   suggestions: string[];
   duration: number;
+  analysis: CallAnalysis;
 }
 
 serve(async (req) => {
@@ -71,29 +91,55 @@ serve(async (req) => {
     const transcript = whisperResult.text;
     const duration = whisperResult.duration || 0;
 
-    console.log('Transcription completed, analyzing for anomalies and suggestions...');
+    console.log('Transcription completed, performing comprehensive call analysis...');
 
-    // Analyze transcript for anomalies and suggestions using GPT
-    const analysisPrompt = `
-You are an expert call analyzer. Analyze the following call transcript and provide:
+    // Comprehensive call analysis using advanced prompting
+    const comprehensiveAnalysisPrompt = `
+You are an expert call analysis AI specializing in customer service and sales calls. Analyze the following call transcript and provide a comprehensive report with speaker diarization, anomaly detection, and scoring.
 
-1. ANOMALIES: Identify any unusual patterns, suspicious behaviors, compliance issues, or concerning elements
-2. SUGGESTIONS: Provide actionable recommendations for improvement
+TRANSCRIPT: "${transcript}"
 
-Transcript: "${transcript}"
+Provide your analysis in the following JSON format:
 
-Respond in JSON format:
 {
-  "anomalies": ["anomaly1", "anomaly2", ...],
-  "suggestions": ["suggestion1", "suggestion2", ...]
+  "objective": "Brief description of the main purpose/objective of the call (e.g., Sales Inquiry, Product Demo, Complaint Handling, Lead Qualification, Order Confirmation, Post-Sales Support)",
+  "transcript": [
+    {
+      "speaker": "Caller" or "Receiver",
+      "text": "What was said",
+      "timestamp": "00:00"
+    }
+  ],
+  "anomalies": {
+    "caller": ["List of anomalies for the caller"],
+    "receiver": ["List of anomalies for the receiver"]
+  },
+  "conclusion": "Natural language summary of who initiated the call, what was discussed, and the outcome",
+  "suggestions": ["Actionable suggestions specifically for the Caller"],
+  "score": 8.5,
+  "scoreReasoning": "Explanation of the score based on communication clarity, objective fulfillment, anomalies, engagement, tone, and outcome"
 }
 
-Focus on:
-- Speech patterns (too fast, unclear, interruptions)
-- Emotional indicators (stress, anger, confusion)
-- Compliance issues (missing disclosures, inappropriate language)
-- Communication quality (unclear explanations, missed opportunities)
-- Professional conduct issues
+ANALYSIS GUIDELINES:
+1. SPEAKER DIARIZATION: Intelligently identify and separate speakers as "Caller" and "Receiver" based on context clues like who initiates, asks questions, or provides information
+2. OBJECTIVE DETECTION: Determine the main purpose from conversation content and flow
+3. ANOMALY DETECTION: Look for:
+   - Long silences or no response
+   - Overlapping speech patterns
+   - Frequent interruptions
+   - Aggressive tone or inappropriate language
+   - Background noise indicators
+   - Unclear communication
+4. SCORING CRITERIA (0-10):
+   - Communication clarity (2 points)
+   - Objective achievement (2 points) 
+   - Professional tone (2 points)
+   - Engagement level (2 points)
+   - Few anomalies (2 points)
+5. LANGUAGE SUPPORT: Handle Hindi-English code-mixed conversations appropriately
+6. SUGGESTIONS: Focus only on caller improvement areas
+
+Ensure timestamps are estimated based on conversation flow if not available in the original transcript.
 `;
 
     const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -103,51 +149,70 @@ Focus on:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         messages: [
-          { role: 'system', content: 'You are a professional call analysis expert. Always respond with valid JSON.' },
-          { role: 'user', content: analysisPrompt }
+          { role: 'system', content: 'You are a professional call analysis expert specializing in comprehensive call evaluation with speaker diarization. Always respond with valid JSON that matches the exact format requested.' },
+          { role: 'user', content: comprehensiveAnalysisPrompt }
         ],
-        temperature: 0.3,
-        max_tokens: 1000,
+        temperature: 0.2,
+        max_tokens: 3000,
       }),
     });
 
     if (!analysisResponse.ok) {
       console.error('Analysis API error:', await analysisResponse.text());
-      // Continue without analysis rather than failing completely
+      throw new Error(`Analysis API error: ${analysisResponse.status}`);
     }
 
+    let analysis: CallAnalysis;
     let anomalies: string[] = [];
     let suggestions: string[] = [];
 
-    if (analysisResponse.ok) {
+    try {
       const analysisResult = await analysisResponse.json();
       const analysisContent = analysisResult.choices[0]?.message?.content;
       
-      try {
-        const analysis = JSON.parse(analysisContent);
-        anomalies = analysis.anomalies || [];
-        suggestions = analysis.suggestions || [];
-      } catch (parseError) {
-        console.error('Failed to parse analysis JSON:', parseError);
-        // Provide fallback analysis
-        if (transcript.length > 0) {
-          suggestions.push("Consider reviewing the call for clarity and completeness");
-          if (transcript.split(' ').length > 500) {
-            anomalies.push("Call duration may be longer than typical");
-          }
-        }
-      }
+      console.log('Raw analysis response:', analysisContent);
+      
+      analysis = JSON.parse(analysisContent);
+      
+      // Extract legacy format for backward compatibility
+      anomalies = [...(analysis.anomalies.caller || []), ...(analysis.anomalies.receiver || [])];
+      suggestions = analysis.suggestions || [];
+      
+    } catch (parseError) {
+      console.error('Failed to parse comprehensive analysis JSON:', parseError);
+      
+      // Fallback analysis
+      analysis = {
+        objective: "Unable to determine call objective",
+        transcript: [{
+          speaker: "System" as 'Caller' | 'Receiver',
+          text: transcript.substring(0, 500) + "...",
+          timestamp: "00:00"
+        }],
+        anomalies: {
+          caller: ["Analysis error - manual review required"],
+          receiver: ["Analysis error - manual review required"]
+        },
+        conclusion: "Call analysis could not be completed due to processing error",
+        suggestions: ["Manual review of call recording recommended"],
+        score: 5.0,
+        scoreReasoning: "Score not available due to analysis error"
+      };
+      
+      anomalies = ["Analysis processing error"];
+      suggestions = ["Manual review recommended"];
     }
 
-    console.log('Analysis completed successfully');
+    console.log('Comprehensive analysis completed successfully');
 
     const response: TranscriptionResponse = {
       transcript,
       anomalies,
       suggestions,
       duration: Math.round(duration),
+      analysis,
     };
 
     return new Response(JSON.stringify(response), {
@@ -161,12 +226,21 @@ Focus on:
     console.error('Transcription error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || String(error), // Include error message
-        stack: error.stack || null,           // Optionally include stack trace
+        error: error.message || String(error),
+        stack: error.stack || null,
         transcript: 'Error during transcription',
         anomalies: [],
         suggestions: [],
-        duration: 0
+        duration: 0,
+        analysis: {
+          objective: "Error during analysis",
+          transcript: [],
+          anomalies: { caller: [], receiver: [] },
+          conclusion: "Call analysis failed",
+          suggestions: [],
+          score: 0,
+          scoreReasoning: "Analysis could not be completed due to error"
+        }
       }),
       {
         status: 500,

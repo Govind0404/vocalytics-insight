@@ -6,14 +6,34 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Search, Clock, AlertTriangle, Lightbulb, FileAudio } from "lucide-react";
 
+interface SpeakerSegment {
+  speaker: 'Caller' | 'Receiver';
+  text: string;
+  timestamp: string;
+}
+
+interface CallAnalysis {
+  objective: string;
+  transcript: SpeakerSegment[];
+  anomalies: {
+    caller: string[];
+    receiver: string[];
+  };
+  conclusion: string;
+  suggestions: string[];
+  score: number;
+  scoreReasoning: string;
+}
+
 interface TranscriptionData {
   id: string;
   transcript: string;
-  timestamp: Date;
+  timestamp: string;
   anomalies: string[];
   suggestions: string[];
   duration: number;
   status: 'processing' | 'completed' | 'error';
+  analysis?: CallAnalysis;
 }
 
 interface CallHistoryProps {
@@ -26,7 +46,7 @@ export const CallHistory = ({ transcriptions, onSelectTranscription }: CallHisto
 
   const filteredTranscriptions = transcriptions.filter(t => 
     t.transcript.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.timestamp.toLocaleString().includes(searchTerm)
+    new Date(t.timestamp).toLocaleString().includes(searchTerm)
   );
 
   const getStatusColor = (status: string) => {
@@ -104,7 +124,7 @@ export const CallHistory = ({ transcriptions, onSelectTranscription }: CallHisto
                               </Badge>
                               <span className="text-sm text-muted-foreground flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
-                                {transcription.timestamp.toLocaleDateString()} at {transcription.timestamp.toLocaleTimeString()}
+                                {new Date(transcription.timestamp).toLocaleDateString()} at {new Date(transcription.timestamp).toLocaleTimeString()}
                               </span>
                             </div>
                             <p className="text-sm text-muted-foreground">
