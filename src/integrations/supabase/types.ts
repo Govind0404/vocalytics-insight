@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      transcriptions: {
+        Row: {
+          analysis: Json | null
+          audio_file_path: string | null
+          created_at: string
+          duration: number | null
+          file_name: string
+          file_size: number | null
+          id: string
+          transcript: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          analysis?: Json | null
+          audio_file_path?: string | null
+          created_at?: string
+          duration?: number | null
+          file_name: string
+          file_size?: number | null
+          id?: string
+          transcript?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          analysis?: Json | null
+          audio_file_path?: string | null
+          created_at?: string
+          duration?: number | null
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          transcript?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
