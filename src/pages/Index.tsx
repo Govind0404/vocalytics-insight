@@ -2,18 +2,21 @@ import { CallTranscriptionDashboard } from "@/components/CallTranscriptionDashbo
 
 const Index = () => {
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-2">
-          AI-Powered Call Analysis
-        </h2>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          Comprehensive call transcription with speaker diarization, anomaly detection, and quality scoring. 
-          Supports English, Hindi, and Tamil languages.
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+      <div className="container mx-auto px-4 py-8">
+        <header className="text-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-4">
+            Call Transcription & Analysis
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Comprehensive AI-powered call analysis with speaker diarization, anomaly detection, and quality scoring
+          </p>
+        </header>
+        
+        <div className="max-w-6xl mx-auto">
+          <CallTranscriptionDashboard />
+        </div>
       </div>
-      
-      <CallTranscriptionDashboard />
     </div>
   );
 };

@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Download, AlertTriangle, Lightbulb, Clock, FileAudio } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Copy, Download, AlertTriangle, Lightbulb, Clock } from "lucide-react";
 import { TranscriptionData } from "@/types/transcription";
 
 interface TranscriptionResultsProps {
@@ -70,48 +69,6 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
     });
   };
 
-  const downloadAudioFile = async () => {
-    if (!transcription.audioUrl) {
-      toast({
-        title: "Audio file not available",
-        description: "No audio file is associated with this transcription",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.storage
-        .from('audio-files')
-        .download(transcription.audioUrl);
-
-      if (error) {
-        throw error;
-      }
-
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = transcription.fileName || 'audio-file';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Download started",
-        description: "Audio file has been downloaded"
-      });
-    } catch (error) {
-      console.error('Audio download error:', error);
-      toast({
-        title: "Download failed",
-        description: "Could not download the audio file",
-        variant: "destructive"
-      });
-    }
-  };
-
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -163,18 +120,8 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
                 onClick={downloadTranscript}
               >
                 <Download className="w-4 h-4 mr-2" />
-                Download Report
+                Download
               </Button>
-              {transcription.audioUrl && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={downloadAudioFile}
-                >
-                  <FileAudio className="w-4 h-4 mr-2" />
-                  Download Audio
-                </Button>
-              )}
             </div>
           </div>
         </CardHeader>

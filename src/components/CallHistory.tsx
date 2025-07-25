@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Search, Clock, AlertTriangle, Lightbulb, FileAudio, Download } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { Search, Clock, AlertTriangle, Lightbulb, FileAudio } from "lucide-react";
 import { TranscriptionData } from "@/types/transcription";
 
 interface CallHistoryProps {
@@ -16,7 +14,6 @@ interface CallHistoryProps {
 
 export const CallHistory = ({ transcriptions, onSelectTranscription }: CallHistoryProps) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const { toast } = useToast();
 
   const filteredTranscriptions = transcriptions.filter(t => 
     t.transcript.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,50 +38,6 @@ export const CallHistory = ({ transcriptions, onSelectTranscription }: CallHisto
   const truncateText = (text: string, maxLength: number = 150) => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
-  };
-
-  const downloadAudioFile = async (transcription: TranscriptionData, event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent triggering the card click
-    
-    if (!transcription.audioUrl) {
-      toast({
-        title: "Audio file not available",
-        description: "No audio file is associated with this transcription",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase.storage
-        .from('audio-files')
-        .download(transcription.audioUrl);
-
-      if (error) {
-        throw error;
-      }
-
-      const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = transcription.fileName || 'audio-file';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "Download started",
-        description: "Audio file has been downloaded"
-      });
-    } catch (error) {
-      console.error('Audio download error:', error);
-      toast({
-        title: "Download failed",
-        description: "Could not download the audio file",
-        variant: "destructive"
-      });
-    }
   };
 
   return (
@@ -149,21 +102,9 @@ export const CallHistory = ({ transcriptions, onSelectTranscription }: CallHisto
                               Duration: {formatDuration(transcription.duration)}
                             </p>
                           </div>
-                          <div className="flex gap-2">
-                            {transcription.audioUrl && (
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={(e) => downloadAudioFile(transcription, e)}
-                              >
-                                <Download className="w-3 h-3 mr-1" />
-                                Audio
-                              </Button>
-                            )}
-                            <Button variant="outline" size="sm">
-                              View Details
-                            </Button>
-                          </div>
+                          <Button variant="outline" size="sm">
+                            View Details
+                          </Button>
                         </div>
 
                         {/* Transcript Preview */}

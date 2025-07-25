@@ -70,12 +70,11 @@ serve(async (req) => {
     const binaryAudio = Uint8Array.from(atob(audio), c => c.charCodeAt(0));
     const audioBlob = new Blob([binaryAudio], { type: fileType });
 
-    // Prepare form data for OpenAI Whisper API with multilingual support
+    // Prepare form data for OpenAI Whisper API
     const formData = new FormData();
     formData.append('file', audioBlob, fileName);
     formData.append('model', 'whisper-1');
     formData.append('response_format', 'verbose_json');
-    formData.append('language', 'auto'); // Auto-detect from English, Hindi, Tamil
 
     console.log('Sending audio to OpenAI Whisper API...');
 
@@ -102,7 +101,7 @@ serve(async (req) => {
 
     // Comprehensive call analysis using advanced prompting
     const comprehensiveAnalysisPrompt = `
-You are an expert call analysis AI specializing in customer service and sales calls. Analyze the following call transcript (which may be in English, Hindi, Tamil, or a mix of these languages) and provide a comprehensive report with speaker diarization, positive/negative anomaly detection, and enhanced scoring.
+You are an expert call analysis AI specializing in customer service and sales calls. Analyze the following call transcript and provide a comprehensive report with speaker diarization, positive/negative anomaly detection, and enhanced scoring.
 
 TRANSCRIPT: "${transcript}"
 
@@ -127,7 +126,7 @@ Provide your analysis in the following JSON format:
       "negative": ["List of negative behaviors/issues for the receiver"]
     }
   },
-  "conclusion": "DETAILED natural language summary including: who initiated the call and their role, comprehensive overview of what was discussed with key points, specific actions taken or agreements made, resolution status, next steps if any, overall call outcome and satisfaction level, and any important contextual information",
+  "conclusion": "Natural language summary of who initiated the call, what was discussed, and the outcome",
   "suggestions": ["Actionable suggestions specifically for the Caller"],
   "score": 8.5,
   "scoreReasoning": "Comprehensive explanation of the score based on communication clarity, objective fulfillment, positive/negative anomalies, engagement, tone, conclusion quality, and overall call effectiveness"
@@ -168,7 +167,7 @@ ANALYSIS GUIDELINES:
    - Problem-solving effectiveness (1 point)
    - Overall call quality and outcome (1 point)
 
-6. LANGUAGE SUPPORT: Handle multilingual conversations appropriately (English, Hindi, Tamil) including code-mixed conversations. Ensure accurate diarization regardless of language switches.
+6. LANGUAGE SUPPORT: Handle Hindi-English code-mixed conversations appropriately
 
 7. SUGGESTIONS: Focus on actionable improvement areas for the caller based on identified negative anomalies and missed positive opportunities
 
