@@ -6,36 +6,7 @@ import { LiveRecorder } from "./LiveRecorder";
 import { TranscriptionResults } from "./TranscriptionResults";
 import { ComprehensiveCallAnalysis } from "./ComprehensiveCallAnalysis";
 import { CallHistory } from "./CallHistory";
-
-interface SpeakerSegment {
-  speaker: 'Caller' | 'Receiver';
-  text: string;
-  timestamp: string;
-}
-
-interface CallAnalysis {
-  objective: string;
-  transcript: SpeakerSegment[];
-  anomalies: {
-    caller: string[];
-    receiver: string[];
-  };
-  conclusion: string;
-  suggestions: string[];
-  score: number;
-  scoreReasoning: string;
-}
-
-interface TranscriptionData {
-  id: string;
-  transcript: string;
-  timestamp: string;
-  anomalies: string[];
-  suggestions: string[];
-  duration: number;
-  status: 'processing' | 'completed' | 'error';
-  analysis?: CallAnalysis;
-}
+import { TranscriptionData } from "@/types/transcription";
 
 export const CallTranscriptionDashboard = () => {
   const [transcriptions, setTranscriptions] = useState<TranscriptionData[]>([]);

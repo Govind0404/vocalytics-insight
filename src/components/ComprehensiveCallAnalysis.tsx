@@ -18,35 +18,7 @@ import {
   Clock,
   Star
 } from 'lucide-react';
-
-interface SpeakerSegment {
-  speaker: 'Caller' | 'Receiver';
-  text: string;
-  timestamp: string;
-}
-
-interface CallAnalysis {
-  objective: string;
-  transcript: SpeakerSegment[];
-  anomalies: {
-    caller: string[];
-    receiver: string[];
-  };
-  conclusion: string;
-  suggestions: string[];
-  score: number;
-  scoreReasoning: string;
-}
-
-interface TranscriptionData {
-  transcript: string;
-  timestamp: string;
-  anomalies: string[];
-  suggestions: string[];
-  duration: number;
-  status: 'processing' | 'completed' | 'error';
-  analysis?: CallAnalysis;
-}
+import { TranscriptionData } from '@/types/transcription';
 
 interface ComprehensiveCallAnalysisProps {
   transcription: TranscriptionData;
@@ -100,11 +72,17 @@ ${analysis.transcript.map(segment =>
 DETECTED ANOMALIES
 =================================
 
-CALLER ANOMALIES:
-${analysis.anomalies.caller.map(anomaly => `• ${anomaly}`).join('\n')}
+CALLER POSITIVE BEHAVIORS:
+${analysis.anomalies.caller.positive.map(anomaly => `• ${anomaly}`).join('\n')}
 
-RECEIVER ANOMALIES:
-${analysis.anomalies.receiver.map(anomaly => `• ${anomaly}`).join('\n')}
+CALLER NEGATIVE BEHAVIORS:
+${analysis.anomalies.caller.negative.map(anomaly => `• ${anomaly}`).join('\n')}
+
+RECEIVER POSITIVE BEHAVIORS:
+${analysis.anomalies.receiver.positive.map(anomaly => `• ${anomaly}`).join('\n')}
+
+RECEIVER NEGATIVE BEHAVIORS:
+${analysis.anomalies.receiver.negative.map(anomaly => `• ${anomaly}`).join('\n')}
 
 =================================
 CALL CONCLUSION
@@ -277,51 +255,139 @@ ${transcription.transcript}
         </CardContent>
       </Card>
 
-      {/* Anomalies */}
+      {/* Audio Player */}
+      {transcription.audioUrl && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <User className="h-5 w-5" />
+              <span>Audio Recording</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <audio controls className="w-full">
+                <source src={transcription.audioUrl} type="audio/mpeg" />
+                <source src={transcription.audioUrl} type="audio/wav" />
+                Your browser does not support the audio element.
+              </audio>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const a = document.createElement('a');
+                    a.href = transcription.audioUrl!;
+                    a.download = transcription.fileName || 'recording.mp3';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  }}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Audio
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Caller Behaviors */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-blue-500" />
-              <span>Caller Anomalies</span>
+              <User className="h-5 w-5 text-blue-500" />
+              <span>Caller Analysis</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {analysis.anomalies.caller.length > 0 ? (
-              <ul className="space-y-2">
-                {analysis.anomalies.caller.map((anomaly, index) => (
-                  <li key={index} className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-                    <span className="text-sm">{anomaly}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No anomalies detected</p>
-            )}
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="font-medium text-green-600 mb-2 flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Positive Behaviors
+              </h4>
+              {analysis.anomalies.caller.positive.length > 0 ? (
+                <ul className="space-y-2">
+                  {analysis.anomalies.caller.positive.map((positive, index) => (
+                    <li key={index} className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-sm">{positive}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No positive behaviors identified</p>
+              )}
+            </div>
+            <Separator />
+            <div>
+              <h4 className="font-medium text-red-600 mb-2 flex items-center">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Areas for Improvement
+              </h4>
+              {analysis.anomalies.caller.negative.length > 0 ? (
+                <ul className="space-y-2">
+                  {analysis.anomalies.caller.negative.map((negative, index) => (
+                    <li key={index} className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-sm">{negative}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No issues identified</p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-green-500" />
-              <span>Receiver Anomalies</span>
+              <UserCheck className="h-5 w-5 text-green-500" />
+              <span>Receiver Analysis</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {analysis.anomalies.receiver.length > 0 ? (
-              <ul className="space-y-2">
-                {analysis.anomalies.receiver.map((anomaly, index) => (
-                  <li key={index} className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
-                    <span className="text-sm">{anomaly}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No anomalies detected</p>
-            )}
+          <CardContent className="space-y-4">
+            <div>
+              <h4 className="font-medium text-green-600 mb-2 flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Positive Behaviors
+              </h4>
+              {analysis.anomalies.receiver.positive.length > 0 ? (
+                <ul className="space-y-2">
+                  {analysis.anomalies.receiver.positive.map((positive, index) => (
+                    <li key={index} className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-sm">{positive}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No positive behaviors identified</p>
+              )}
+            </div>
+            <Separator />
+            <div>
+              <h4 className="font-medium text-red-600 mb-2 flex items-center">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Areas for Improvement
+              </h4>
+              {analysis.anomalies.receiver.negative.length > 0 ? (
+                <ul className="space-y-2">
+                  {analysis.anomalies.receiver.negative.map((negative, index) => (
+                    <li key={index} className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full mt-2 flex-shrink-0" />
+                      <span className="text-sm">{negative}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground">No issues identified</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>

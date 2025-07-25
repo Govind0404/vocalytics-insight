@@ -22,8 +22,14 @@ interface CallAnalysis {
   objective: string;
   transcript: SpeakerSegment[];
   anomalies: {
-    caller: string[];
-    receiver: string[];
+    caller: {
+      positive: string[];
+      negative: string[];
+    };
+    receiver: {
+      positive: string[];
+      negative: string[];
+    };
   };
   conclusion: string;
   suggestions: string[];
@@ -95,7 +101,7 @@ serve(async (req) => {
 
     // Comprehensive call analysis using advanced prompting
     const comprehensiveAnalysisPrompt = `
-You are an expert call analysis AI specializing in customer service and sales calls. Analyze the following call transcript and provide a comprehensive report with speaker diarization, anomaly detection, and scoring.
+You are an expert call analysis AI specializing in customer service and sales calls. Analyze the following call transcript and provide a comprehensive report with speaker diarization, positive/negative anomaly detection, and enhanced scoring.
 
 TRANSCRIPT: "${transcript}"
 
@@ -111,33 +117,59 @@ Provide your analysis in the following JSON format:
     }
   ],
   "anomalies": {
-    "caller": ["List of anomalies for the caller"],
-    "receiver": ["List of anomalies for the receiver"]
+    "caller": {
+      "positive": ["List of positive behaviors/strengths for the caller"],
+      "negative": ["List of negative behaviors/issues for the caller"]
+    },
+    "receiver": {
+      "positive": ["List of positive behaviors/strengths for the receiver"],
+      "negative": ["List of negative behaviors/issues for the receiver"]
+    }
   },
   "conclusion": "Natural language summary of who initiated the call, what was discussed, and the outcome",
   "suggestions": ["Actionable suggestions specifically for the Caller"],
   "score": 8.5,
-  "scoreReasoning": "Explanation of the score based on communication clarity, objective fulfillment, anomalies, engagement, tone, and outcome"
+  "scoreReasoning": "Comprehensive explanation of the score based on communication clarity, objective fulfillment, positive/negative anomalies, engagement, tone, conclusion quality, and overall call effectiveness"
 }
 
 ANALYSIS GUIDELINES:
 1. SPEAKER DIARIZATION: Intelligently identify and separate speakers as "Caller" and "Receiver" based on context clues like who initiates, asks questions, or provides information
+
 2. OBJECTIVE DETECTION: Determine the main purpose from conversation content and flow
-3. ANOMALY DETECTION: Look for:
+
+3. POSITIVE ANOMALY DETECTION: Identify strengths and positive behaviors:
+   - Clear communication and articulation
+   - Active listening and engagement
+   - Professional tone and courtesy
+   - Effective questioning techniques
+   - Problem-solving approach
+   - Empathy and understanding
+   - Proper call flow management
+   - Building rapport
+
+4. NEGATIVE ANOMALY DETECTION: Identify issues and areas for improvement:
    - Long silences or no response
    - Overlapping speech patterns
    - Frequent interruptions
-   - Aggressive tone or inappropriate language
+   - Aggressive or inappropriate tone
    - Background noise indicators
    - Unclear communication
-4. SCORING CRITERIA (0-10):
-   - Communication clarity (2 points)
-   - Objective achievement (2 points) 
-   - Professional tone (2 points)
-   - Engagement level (2 points)
-   - Few anomalies (2 points)
-5. LANGUAGE SUPPORT: Handle Hindi-English code-mixed conversations appropriately
-6. SUGGESTIONS: Focus only on caller improvement areas
+   - Missed opportunities
+   - Poor listening skills
+
+5. ENHANCED SCORING CRITERIA (0-10):
+   - Communication clarity and articulation (1.5 points)
+   - Objective achievement and call resolution (2 points)
+   - Professional tone and courtesy (1.5 points)
+   - Engagement level and active listening (1.5 points)
+   - Positive vs negative anomaly ratio (1.5 points)
+   - Call structure and flow management (1 point)
+   - Problem-solving effectiveness (1 point)
+   - Overall call quality and outcome (1 point)
+
+6. LANGUAGE SUPPORT: Handle Hindi-English code-mixed conversations appropriately
+
+7. SUGGESTIONS: Focus on actionable improvement areas for the caller based on identified negative anomalies and missed positive opportunities
 
 Ensure timestamps are estimated based on conversation flow if not available in the original transcript.
 `;
@@ -184,7 +216,12 @@ Ensure timestamps are estimated based on conversation flow if not available in t
       analysis = JSON.parse(analysisContent.trim());
       
       // Extract legacy format for backward compatibility
-      anomalies = [...(analysis.anomalies.caller || []), ...(analysis.anomalies.receiver || [])];
+      anomalies = [
+        ...(analysis.anomalies.caller?.positive || []),
+        ...(analysis.anomalies.caller?.negative || []),
+        ...(analysis.anomalies.receiver?.positive || []),
+        ...(analysis.anomalies.receiver?.negative || [])
+      ];
       suggestions = analysis.suggestions || [];
       
     } catch (parseError) {
@@ -199,8 +236,14 @@ Ensure timestamps are estimated based on conversation flow if not available in t
           timestamp: "00:00"
         }],
         anomalies: {
-          caller: ["Analysis error - manual review required"],
-          receiver: ["Analysis error - manual review required"]
+          caller: {
+            positive: [],
+            negative: ["Analysis error - manual review required"]
+          },
+          receiver: {
+            positive: [],
+            negative: ["Analysis error - manual review required"]
+          }
         },
         conclusion: "Call analysis could not be completed due to processing error",
         suggestions: ["Manual review of call recording recommended"],
@@ -242,7 +285,10 @@ Ensure timestamps are estimated based on conversation flow if not available in t
         analysis: {
           objective: "Error during analysis",
           transcript: [],
-          anomalies: { caller: [], receiver: [] },
+          anomalies: { 
+            caller: { positive: [], negative: [] },
+            receiver: { positive: [], negative: [] }
+          },
           conclusion: "Call analysis failed",
           suggestions: [],
           score: 0,

@@ -8,6 +8,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Upload, FileAudio, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+interface TranscriptionResponse {
+  transcript: string;
+  anomalies: string[];
+  suggestions: string[];
+  duration: number;
+  analysis: any;
+}
+
 interface AudioUploaderProps {
   onTranscriptionStart: (data: any) => void;
 }
