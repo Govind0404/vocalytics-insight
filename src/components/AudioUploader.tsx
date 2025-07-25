@@ -94,14 +94,11 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
     setProgress(0);
 
     try {
-      // Start transcription process
-      onTranscriptionStart({
-        status: 'processing',
-        transcript: '',
-        anomalies: [],
-        suggestions: [],
-        duration: 0
-      });
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
 
       // Upload file to Supabase storage first
       const fileExt = file.name.split('.').pop();
@@ -118,9 +115,42 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
 
       setProgress(20);
 
+      // Create initial transcription record in database
+      const { data: transcriptionRecord, error: dbError } = await supabase
+        .from('transcriptions')
+        .insert({
+          user_id: user.id,
+          file_name: file.name,
+          audio_file_path: filePath,
+          file_size: file.size,
+          transcript: 'Processing...',
+          duration: 0
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        throw new Error(`Database error: ${dbError.message}`);
+      }
+
+      setProgress(30);
+
+      // Start transcription process
+      onTranscriptionStart({
+        id: transcriptionRecord.id,
+        status: 'processing',
+        transcript: 'Processing...',
+        anomalies: [],
+        suggestions: [],
+        duration: 0,
+        timestamp: transcriptionRecord.created_at,
+        audioUrl: filePath,
+        fileName: file.name
+      });
+
       // Convert file to base64 for transcription
       const base64Audio = await convertFileToBase64(file);
-      setProgress(40);
+      setProgress(50);
 
       // Call the transcription edge function
       const { data, error } = await supabase.functions.invoke('transcribe-audio', {
@@ -137,10 +167,25 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
         throw new Error(error.message || 'Transcription failed');
       }
 
+      // Update the database record with transcription results
+      const { error: updateError } = await supabase
+        .from('transcriptions')
+        .update({
+          transcript: data.transcript || 'No transcript available',
+          duration: data.duration || 0,
+          analysis: data.analysis || null
+        })
+        .eq('id', transcriptionRecord.id);
+
+      if (updateError) {
+        console.error('Failed to update transcription record:', updateError);
+      }
+
       setProgress(100);
 
-      // Process the response with full analysis and audio file path
+      // Process the response with full analysis
       onTranscriptionStart({
+        id: transcriptionRecord.id,
         status: 'completed',
         transcript: data.transcript || 'No transcript available',
         anomalies: data.anomalies || [],
@@ -148,7 +193,8 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
         duration: data.duration || 0,
         analysis: data.analysis || null,
         audioUrl: filePath,
-        fileName: file.name
+        fileName: file.name,
+        timestamp: transcriptionRecord.created_at
       });
 
       toast({
