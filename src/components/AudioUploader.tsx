@@ -103,9 +103,24 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
         duration: 0
       });
 
-      // Convert file to base64
+      // Upload file to Supabase storage first
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `audio/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('audio-files')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw new Error(`File upload failed: ${uploadError.message}`);
+      }
+
+      setProgress(20);
+
+      // Convert file to base64 for transcription
       const base64Audio = await convertFileToBase64(file);
-      setProgress(30);
+      setProgress(40);
 
       // Call the transcription edge function
       const { data, error } = await supabase.functions.invoke('transcribe-audio', {
@@ -116,7 +131,7 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
         }
       });
 
-      setProgress(70);
+      setProgress(80);
 
       if (error) {
         throw new Error(error.message || 'Transcription failed');
@@ -124,14 +139,16 @@ export const AudioUploader = ({ onTranscriptionStart }: AudioUploaderProps) => {
 
       setProgress(100);
 
-      // Process the response with full analysis
+      // Process the response with full analysis and audio file path
       onTranscriptionStart({
         status: 'completed',
         transcript: data.transcript || 'No transcript available',
         anomalies: data.anomalies || [],
         suggestions: data.suggestions || [],
         duration: data.duration || 0,
-        analysis: data.analysis || null
+        analysis: data.analysis || null,
+        audioUrl: filePath,
+        fileName: file.name
       });
 
       toast({
