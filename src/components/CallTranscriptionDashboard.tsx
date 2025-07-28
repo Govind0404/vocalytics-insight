@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AudioUploader } from "./AudioUploader";
-import { LiveRecorder } from "./LiveRecorder";
 import { TranscriptionResults } from "./TranscriptionResults";
 import { ComprehensiveCallAnalysis } from "./ComprehensiveCallAnalysis";
 import { CallHistory } from "./CallHistory";
@@ -41,9 +40,8 @@ export const CallTranscriptionDashboard = () => {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="upload" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upload">Upload Audio</TabsTrigger>
-          <TabsTrigger value="live">Live Recording</TabsTrigger>
           <TabsTrigger value="history">Call History</TabsTrigger>
         </TabsList>
         
@@ -57,20 +55,6 @@ export const CallTranscriptionDashboard = () => {
             </CardHeader>
             <CardContent>
               <AudioUploader onTranscriptionStart={handleNewTranscription} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="live" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Live Recording</CardTitle>
-              <CardDescription>
-                Record audio in real-time and get instant transcription with analysis
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <LiveRecorder onTranscriptionUpdate={handleNewTranscription} />
             </CardContent>
           </Card>
         </TabsContent>

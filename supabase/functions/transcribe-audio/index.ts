@@ -75,6 +75,9 @@ serve(async (req) => {
     formData.append('file', audioBlob, fileName);
     formData.append('model', 'whisper-1');
     formData.append('response_format', 'verbose_json');
+    formData.append('temperature', '0'); // Make transcription more literal
+    // Do not set language, let Whisper auto-detect (supports English, Hindi, Tamil)
+    formData.append('prompt', 'Transcribe accurately. Audio may contain English, Hindi, Tamil, or a mix. For introductions, prefer "This is" if context matches.');
 
     console.log('Sending audio to OpenAI Whisper API...');
 
@@ -99,79 +102,105 @@ serve(async (req) => {
 
     console.log('Transcription completed, performing comprehensive call analysis...');
 
-    // Comprehensive call analysis using advanced prompting
+    // Enhanced call analysis with improved scoring precision
     const comprehensiveAnalysisPrompt = `
-You are an expert call analysis AI specializing in customer service and sales calls. Analyze the following call transcript and provide a comprehensive report with speaker diarization, positive/negative anomaly detection, and enhanced scoring.
+You are an expert call analysis AI specializing in customer service, sales, and consultation calls. Analyze the following call transcript and provide a comprehensive report with speaker diarization, anomaly detection, and highly precise scoring.
 
 TRANSCRIPT: "${transcript}"
+CALL DURATION: ${duration} seconds
 
-Provide your analysis in the following JSON format:
+Return your analysis as a single-line valid JSON object with the following fields:
+- objective: string (brief description of the main purpose/objective of the call)
+- transcript: array of { speaker: "Caller" or "Receiver", text: string, timestamp: string }
+- anomalies: { caller: { positive: string[], negative: string[] }, receiver: { positive: string[], negative: string[] } }
+- conclusion: string (summary of who initiated the call, what was discussed, and the outcome)
+- suggestions: string[] (actionable suggestions specifically for the Caller)
+- score: number (a floating-point value between 0.0 and 10.0 with 0.1 precision, calculated based on the actual transcript and analysis)
+- scoreReasoning: string (detailed explanation of the score with specific factors, improvements, and breakdown)
 
-{
-  "objective": "Brief description of the main purpose/objective of the call (e.g., Sales Inquiry, Product Demo, Complaint Handling, Lead Qualification, Order Confirmation, Post-Sales Support)",
-  "transcript": [
-    {
-      "speaker": "Caller" or "Receiver",
-      "text": "What was said",
-      "timestamp": "00:00"
-    }
-  ],
-  "anomalies": {
-    "caller": {
-      "positive": ["List of positive behaviors/strengths for the caller"],
-      "negative": ["List of negative behaviors/issues for the caller"]
-    },
-    "receiver": {
-      "positive": ["List of positive behaviors/strengths for the receiver"],
-      "negative": ["List of negative behaviors/issues for the receiver"]
-    }
-  },
-  "conclusion": "Natural language summary of who initiated the call, what was discussed, and the outcome",
-  "suggestions": ["Actionable suggestions specifically for the Caller"],
-  "score": 8.5,
-  "scoreReasoning": "Comprehensive explanation of the score based on communication clarity, objective fulfillment, positive/negative anomalies, engagement, tone, conclusion quality, and overall call effectiveness"
-}
+ENHANCED ANALYSIS GUIDELINES:
 
-ANALYSIS GUIDELINES:
-1. SPEAKER DIARIZATION: Intelligently identify and separate speakers as "Caller" and "Receiver" based on context clues like who initiates, asks questions, or provides information
+1. SPEAKER DIARIZATION: Intelligently identify and separate speakers as "Caller" and "Receiver" based on context clues, initiation patterns, and conversation flow
 
-2. OBJECTIVE DETECTION: Determine the main purpose from conversation content and flow
+2. CALL TYPE DETECTION: Automatically detect call type based on content:
+   - Sales calls: Product mentions, pricing discussions, closing attempts
+   - Support calls: Problem descriptions, troubleshooting, resolution
+   - Consultation calls: Advice seeking, expert guidance, planning
+   - Inquiry calls: Information gathering, questions, research
+   - Complaint calls: Issues, dissatisfaction, escalation
+   - Follow-up calls: Previous interaction references, status updates
 
-3. POSITIVE ANOMALY DETECTION: Identify strengths and positive behaviors:
-   - Clear communication and articulation
-   - Active listening and engagement
-   - Professional tone and courtesy
-   - Effective questioning techniques
-   - Problem-solving approach
-   - Empathy and understanding
-   - Proper call flow management
-   - Building rapport
+3. PRECISE SCORING CRITERIA (0.0-10.0 with 0.1 precision):
 
-4. NEGATIVE ANOMALY DETECTION: Identify issues and areas for improvement:
-   - Long silences or no response
-   - Overlapping speech patterns
-   - Frequent interruptions
-   - Aggressive or inappropriate tone
-   - Background noise indicators
-   - Unclear communication
-   - Missed opportunities
-   - Poor listening skills
+   COMMUNICATION EXCELLENCE (2.5 points):
+   - Clarity and articulation (0.5 points)
+   - Professional tone and courtesy (0.5 points)
+   - Language proficiency and fluency (0.5 points)
+   - Voice modulation and pace (0.5 points)
+   - Active listening and responsiveness (0.5 points)
 
-5. ENHANCED SCORING CRITERIA (0-10):
-   - Communication clarity and articulation (1.5 points)
-   - Objective achievement and call resolution (2 points)
-   - Professional tone and courtesy (1.5 points)
-   - Engagement level and active listening (1.5 points)
-   - Positive vs negative anomaly ratio (1.5 points)
-   - Call structure and flow management (1 point)
-   - Problem-solving effectiveness (1 point)
-   - Overall call quality and outcome (1 point)
+   OBJECTIVE ACHIEVEMENT (2.0 points):
+   - Call purpose identification (0.3 points)
+   - Goal accomplishment (0.7 points)
+   - Problem resolution effectiveness (0.5 points)
+   - Outcome quality and satisfaction (0.5 points)
 
-6. LANGUAGE SUPPORT: Handle Hindi-English code-mixed conversations appropriately
+   ENGAGEMENT AND INTERACTION (1.5 points):
+   - Conversation flow and structure (0.5 points)
+   - Question quality and relevance (0.4 points)
+   - Response appropriateness (0.3 points)
+   - Engagement maintenance (0.3 points)
 
-7. SUGGESTIONS: Focus on actionable improvement areas for the caller based on identified negative anomalies and missed positive opportunities
+   ANOMALY IMPACT ASSESSMENT (1.5 points):
+   - Positive behavior impact (0.8 points)
+   - Negative behavior mitigation (0.7 points)
+   - Weight anomalies by impact: Critical (1.0), Moderate (0.6), Minor (0.3)
 
-Ensure timestamps are estimated based on conversation flow if not available in the original transcript.
+   CONTEXT-AWARE FACTORS (1.5 points):
+   - Call type appropriateness (0.3 points)
+   - Duration optimization (0.3 points)
+   - Industry-specific considerations (0.3 points)
+   - Language complexity handling (0.3 points)
+   - Cultural sensitivity (0.3 points)
+
+   TECHNICAL EXCELLENCE (1.0 points):
+   - Call structure and organization (0.4 points)
+   - Time management (0.3 points)
+   - Follow-up planning (0.3 points)
+
+4. SCORING PRECISION REQUIREMENTS:
+   - Use 0.1 precision for scores (e.g., 7.3, 8.7, 9.1, NOT 8.5)
+   - Avoid defaulting to middle-range scores
+   - Calculate based on actual transcript analysis, not examples
+   - Consider call duration impact on scoring
+   - Weight anomalies by their actual impact on call outcome
+
+5. CONTEXT-SPECIFIC ADJUSTMENTS:
+   - Sales calls: Emphasize closing effectiveness, objection handling
+   - Support calls: Focus on problem resolution, customer satisfaction
+   - Consultation calls: Value delivery, expertise demonstration
+   - Multi-language calls: Language proficiency, cultural awareness
+
+6. DURATION OPTIMIZATION:
+   - Short calls (<2 min): Efficiency and directness
+   - Medium calls (2-10 min): Balance of detail and efficiency
+   - Long calls (>10 min): Comprehensive coverage and engagement
+
+7. LANGUAGE SUPPORT: Enhanced handling of Hindi-English code-mixed conversations with cultural context
+
+8. DETAILED REASONING REQUIREMENT: Provide comprehensive scoreReasoning that includes:
+   - Specific scoring breakdown by category
+   - Key strengths and weaknesses identified
+   - Impact of anomalies on final score
+   - Context-specific factors considered
+   - Specific improvement recommendations
+
+IMPORTANT: 
+- Calculate score based on actual transcript analysis, not example values
+- Use 0.1 precision for scores (e.g., 7.3, 8.7, 9.1)
+- Provide detailed scoreReasoning with specific factors and improvements
+- Return only the JSON object, no markdown or extra text
+- Ensure timestamps are estimated based on conversation flow
 `;
 
     const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -214,6 +243,9 @@ Ensure timestamps are estimated based on conversation flow if not available in t
       }
       
       analysis = JSON.parse(analysisContent.trim());
+      
+      // Log the parsed score for debugging
+      console.log('Parsed score:', analysis.score, 'Reasoning:', analysis.scoreReasoning);
       
       // Extract legacy format for backward compatibility
       anomalies = [

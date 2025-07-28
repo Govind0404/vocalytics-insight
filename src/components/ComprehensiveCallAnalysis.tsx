@@ -195,29 +195,6 @@ ${transcription.transcript}
         </CardContent>
       </Card>
 
-      {/* Call Score */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Star className="h-5 w-5" />
-            <span>Call Quality Score</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
-              <div className={`text-4xl font-bold ${getScoreColor(analysis.score)}`}>
-                {analysis.score}/10
-              </div>
-              <Badge variant={analysis.score >= 8 ? "default" : analysis.score >= 6 ? "secondary" : "destructive"}>
-                {analysis.score >= 8 ? "Excellent" : analysis.score >= 6 ? "Good" : "Needs Improvement"}
-              </Badge>
-            </div>
-          </div>
-          <p className="text-sm text-muted-foreground">{analysis.scoreReasoning}</p>
-        </CardContent>
-      </Card>
-
       {/* Speaker-Aware Transcript */}
       <Card>
         <CardHeader>
@@ -293,8 +270,9 @@ ${transcription.transcript}
         </Card>
       )}
 
-      {/* Caller Behaviors */}
+      {/* Caller and Receiver Analysis */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Caller Analysis */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -343,6 +321,7 @@ ${transcription.transcript}
           </CardContent>
         </Card>
 
+        {/* Receiver Analysis */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -392,16 +371,90 @@ ${transcription.transcript}
         </Card>
       </div>
 
-      {/* Call Conclusion */}
+      {/* Call Summary */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <CheckCircle className="h-5 w-5" />
-            <span>Call Conclusion</span>
+            <span>Call Summary</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm leading-relaxed">{analysis.conclusion}</p>
+        </CardContent>
+      </Card>
+
+      {/* Enhanced Call Quality Score */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Star className="h-5 w-5" />
+            <span>Call Quality Score</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <div className={`text-4xl font-bold ${getScoreColor(analysis.score)}`}>
+                {analysis.score.toFixed(1)}/10
+              </div>
+              <Badge variant={analysis.score >= 8 ? "default" : analysis.score >= 6 ? "secondary" : "destructive"}>
+                {analysis.score >= 8 ? "Excellent" : analysis.score >= 6 ? "Good" : "Needs Improvement"}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Enhanced Score Reasoning Display */}
+          <div className="bg-muted/50 rounded-lg p-4">
+            <h5 className="font-medium text-sm mb-3 flex items-center">
+              <Target className="h-4 w-4 mr-2" />
+              Detailed Score Analysis
+            </h5>
+            <div className="space-y-3">
+              <div className="text-sm leading-relaxed text-muted-foreground">
+                {analysis.scoreReasoning.split('.').map((sentence, index) => (
+                  sentence.trim() && (
+                    <p key={index} className="mb-2">
+                      {sentence.trim()}.
+                    </p>
+                  )
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Score Insights */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
+              <h6 className="font-medium text-sm text-blue-700 dark:text-blue-300 mb-2">Key Strengths</h6>
+              <ul className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+                {analysis.anomalies.caller.positive.slice(0, 3).map((positive, index) => (
+                  <li key={index} className="flex items-start">
+                    <CheckCircle className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
+                    {positive}
+                  </li>
+                ))}
+                {analysis.anomalies.caller.positive.length === 0 && (
+                  <li className="text-muted-foreground">No specific strengths identified</li>
+                )}
+              </ul>
+            </div>
+
+            <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3">
+              <h6 className="font-medium text-sm text-orange-700 dark:text-orange-300 mb-2">Areas for Improvement</h6>
+              <ul className="text-xs text-orange-600 dark:text-orange-400 space-y-1">
+                {analysis.anomalies.caller.negative.slice(0, 3).map((negative, index) => (
+                  <li key={index} className="flex items-start">
+                    <AlertTriangle className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
+                    {negative}
+                  </li>
+                ))}
+                {analysis.anomalies.caller.negative.length === 0 && (
+                  <li className="text-muted-foreground">No specific issues identified</li>
+                )}
+              </ul>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
