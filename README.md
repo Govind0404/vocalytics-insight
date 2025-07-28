@@ -46,8 +46,6 @@ Vocalytics Insight is a modern web application designed to help businesses and i
   - Real-time subscriptions
   - Authentication and authorization
 
-Follow these steps:
-
 ### Development Tools
 - **ESLint** - Code linting and formatting
 - **PostCSS** - CSS processing
