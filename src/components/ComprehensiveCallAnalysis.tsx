@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,9 @@ import {
   User,
   UserCheck,
   Clock,
-  Star
+  Star,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { TranscriptionData } from '@/types/transcription';
 
@@ -74,6 +76,7 @@ export const ComprehensiveCallAnalysis: React.FC<ComprehensiveCallAnalysisProps>
     return speaker === roles.agentRole ? 'Agent' : 'Customer';
   };
 
+  const [showDetailedAnalysis, setShowDetailedAnalysis] = useState(false);
   const getSpeakerVariant = (speaker: 'Caller' | 'Receiver') => {
     if (!roles) return 'outline';
     return speaker === roles.agentRole ? 'secondary' : 'outline';
@@ -325,7 +328,7 @@ ${transcription.transcript}
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <User className="h-5 w-5 text-blue-500" />
-              <span>Caller Analysis</span>
+              <span>Customer Analysis</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -374,7 +377,7 @@ ${transcription.transcript}
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <UserCheck className="h-5 w-5 text-green-500" />
-              <span>Receiver Analysis</span>
+              <span>Agent Analysis</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -450,68 +453,96 @@ ${transcription.transcript}
                 {analysis.score >= 8 ? "Excellent" : analysis.score >= 6 ? "Good" : "Needs Improvement"}
               </Badge>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDetailedAnalysis(!showDetailedAnalysis)}
+            >
+              {showDetailedAnalysis ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                  Hide Details
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                  Show Details
+                </>
+              )}
+            </Button>
           </div>
 
-          {/* Enhanced Score Reasoning Display */}
-          <div className="bg-muted/50 rounded-lg p-4">
-            <h5 className="font-medium text-sm mb-3 flex items-center">
-              <Target className="h-4 w-4 mr-2" />
-              Detailed Score Analysis
-            </h5>
-            <div className="space-y-3">
-              <div className="text-sm leading-relaxed text-muted-foreground">
-                {analysis.scoreReasoning.split('.').map((sentence, index) => (
-                  sentence.trim() && (
-                    <p key={index} className="mb-2">
-                      {sentence.trim()}.
-                    </p>
-                  )
-                ))}
+          {showDetailedAnalysis && (
+            <>
+              <div className="bg-muted/50 rounded-lg p-4">
+                <h5 className="font-medium text-sm mb-3 flex items-center">
+                  <Target className="h-4 w-4 mr-2" />
+                  Detailed Score Analysis
+                </h5>
+                <div className="space-y-3">
+                  <div className="text-sm leading-relaxed text-muted-foreground">
+                    {analysis.scoreReasoning.split('.').map((sentence, index) => (
+                      sentence.trim() && (
+                        <p key={index} className="mb-2">
+                          {sentence.trim()}.
+                        </p>
+                      )
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* Score Insights */}
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
-              <h6 className="font-medium text-sm text-blue-700 dark:text-blue-300 mb-2">Key Strengths</h6>
-              <ul className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
-                {analysis.anomalies.caller.positive.slice(0, 3).map((positive, index) => (
-                  <li key={index} className="flex items-start">
-                    <CheckCircle className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
-                    {positive}
-                  </li>
-                ))}
-                {analysis.anomalies.caller.positive.length === 0 && (
-                  <li className="text-muted-foreground">No specific strengths identified</li>
-                )}
-              </ul>
-            </div>
+              {/* Score Insights */}
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
+                  <h6 className="font-medium text-sm text-blue-700 dark:text-blue-300 mb-2">Key Strengths</h6>
+                  <ul className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+                    {(roles?.agentRole === 'Receiver' ? 
+                      analysis.anomalies.receiver.positive : 
+                      analysis.anomalies.caller.positive).slice(0, 3).map((positive, index) => (
+                      <li key={index} className="flex items-start">
+                        <CheckCircle className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
+                        {positive}
+                      </li>
+                    ))}
+                    {(roles?.agentRole === 'Receiver' ? 
+                      analysis.anomalies.receiver.positive : 
+                      analysis.anomalies.caller.positive).length === 0 && (
+                      <li className="text-muted-foreground">No specific strengths identified</li>
+                    )}
+                  </ul>
+                </div>
 
-            <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3">
-              <h6 className="font-medium text-sm text-orange-700 dark:text-orange-300 mb-2">Areas for Improvement</h6>
-              <ul className="text-xs text-orange-600 dark:text-orange-400 space-y-1">
-                {analysis.anomalies.caller.negative.slice(0, 3).map((negative, index) => (
-                  <li key={index} className="flex items-start">
-                    <AlertTriangle className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
-                    {negative}
-                  </li>
-                ))}
-                {analysis.anomalies.caller.negative.length === 0 && (
-                  <li className="text-muted-foreground">No specific issues identified</li>
-                )}
-              </ul>
-            </div>
-          </div>
+                <div className="bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3">
+                  <h6 className="font-medium text-sm text-orange-700 dark:text-orange-300 mb-2">Areas for Improvement</h6>
+                  <ul className="text-xs text-orange-600 dark:text-orange-400 space-y-1">
+                    {(roles?.agentRole === 'Receiver' ? 
+                      analysis.anomalies.receiver.negative : 
+                      analysis.anomalies.caller.negative).slice(0, 3).map((negative, index) => (
+                      <li key={index} className="flex items-start">
+                        <AlertTriangle className="h-3 w-3 mr-1 mt-0.5 flex-shrink-0" />
+                        {negative}
+                      </li>
+                    ))}
+                    {(roles?.agentRole === 'Receiver' ? 
+                      analysis.anomalies.receiver.negative : 
+                      analysis.anomalies.caller.negative).length === 0 && (
+                      <li className="text-muted-foreground">No specific issues identified</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
-      {/* Suggestions for Caller */}
+      {/* Agent Improvement Suggestions */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <TrendingUp className="h-5 w-5" />
-            <span>Suggestions for Caller</span>
+            <span>Agent Improvement Suggestions</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -520,12 +551,15 @@ ${transcription.transcript}
               {analysis.suggestions.map((suggestion, index) => (
                 <li key={index} className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                  <span className="text-sm">{suggestion}</span>
+                  <div>
+                    <span className="text-sm font-medium text-primary">Recommendation {index + 1}: </span>
+                    <span className="text-sm">{suggestion}</span>
+                  </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">No specific suggestions available</p>
+            <p className="text-muted-foreground text-sm">No suggestions available for the agent</p>
           )}
         </CardContent>
       </Card>

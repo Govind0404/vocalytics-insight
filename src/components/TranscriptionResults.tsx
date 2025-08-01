@@ -180,7 +180,7 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
         <CardHeader>
           <CardTitle>Sales Call Transcript</CardTitle>
           <CardDescription>
-            Full transcription with dynamic speaker identification (Agent and Customer roles identified based on call analysis)
+            Full transcription with dynamic speaker identification (Agent and Customer roles)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -230,7 +230,7 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Customer Analysis
-              <Badge variant="secondary">[Customer - {roles?.customerRole || 'Unknown'}]</Badge>
+              <Badge variant="secondary">Customer</Badge>
             </CardTitle>
             <CardDescription>
               Analysis of customer behavior and communication patterns
@@ -298,7 +298,7 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Agent Analysis
-              <Badge variant="default">[Agent - {roles?.agentRole || 'Unknown'}]</Badge>
+              <Badge variant="default">Agent</Badge>
             </CardTitle>
             <CardDescription>
               Analysis of agent performance and communication effectiveness
@@ -369,7 +369,7 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
               Agent Improvement Suggestions ({transcription.suggestions.length})
             </CardTitle>
             <CardDescription>
-              AI-generated recommendations exclusively for agent performance enhancement
+              Personalized recommendations to enhance agent performance and customer interaction skills
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -379,14 +379,14 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
                   <div key={index} className="flex items-start gap-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
                     <p className="text-sm">
-                      <span className="font-medium text-blue-600">[Agent] </span>
+                      <span className="font-medium text-blue-600">Suggestion: </span>
                       {suggestion}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-sm">No agent suggestions available</p>
+              <p className="text-muted-foreground text-sm">No suggestions available for the agent</p>
             )}
           </CardContent>
         </Card>
