@@ -130,9 +130,9 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
       {/* Transcript */}
       <Card>
         <CardHeader>
-          <CardTitle>Transcript</CardTitle>
+          <CardTitle>Sales Call Transcript</CardTitle>
           <CardDescription>
-            Full transcription of the audio content
+            Full transcription with speaker identification (Customer = Caller, Agent = Receiver)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -149,52 +149,155 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
             </div>
           ) : (
             <ScrollArea className="h-64 w-full rounded-md border p-4">
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {transcription.transcript || 'No transcript available'}
-              </p>
+              {transcription.analysis?.transcript && transcription.analysis.transcript.length > 0 ? (
+                <div className="space-y-3">
+                  {transcription.analysis.transcript.map((segment, index) => (
+                    <div key={index} className="flex gap-3">
+                      <div className="flex-shrink-0">
+                        <Badge variant={segment.speaker === 'Caller' ? 'secondary' : 'default'}>
+                          {segment.speaker === 'Caller' ? '[Customer]' : '[Agent]'}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground ml-2">{segment.timestamp}</span>
+                      </div>
+                      <p className="text-sm leading-relaxed flex-1">
+                        {segment.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {transcription.transcript || 'No transcript available'}
+                </p>
+              )}
             </ScrollArea>
           )}
         </CardContent>
       </Card>
 
       {/* Analysis Results */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Anomalies */}
+      <div className="space-y-6">
+        {/* Customer Analysis */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-600">
-              <AlertTriangle className="w-5 h-5" />
-              Anomalies Detected ({transcription.anomalies.length})
+            <CardTitle className="flex items-center gap-2">
+              Customer Analysis
+              <Badge variant="secondary">[Customer - Caller]</Badge>
             </CardTitle>
             <CardDescription>
-              Unusual patterns or issues found in the conversation
+              Analysis of customer behavior and communication patterns
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {transcription.anomalies.length > 0 ? (
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Customer Positive Anomalies */}
               <div className="space-y-3">
-                {transcription.anomalies.map((anomaly, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm">{anomaly}</p>
+                <h4 className="text-sm font-medium text-green-600 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  Positive Behaviors ({transcription.analysis?.anomalies.caller.positive.length || 0})
+                </h4>
+                {transcription.analysis?.anomalies.caller.positive.length ? (
+                  <div className="space-y-2">
+                    {transcription.analysis.anomalies.caller.positive.map((positive, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2 flex-shrink-0" />
+                        <p className="text-xs text-green-700">{positive}</p>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <p className="text-xs text-muted-foreground">No positive behaviors identified</p>
+                )}
               </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">No anomalies detected</p>
-            )}
+
+              {/* Customer Negative Anomalies */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-red-600 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  Areas for Concern ({transcription.analysis?.anomalies.caller.negative.length || 0})
+                </h4>
+                {transcription.analysis?.anomalies.caller.negative.length ? (
+                  <div className="space-y-2">
+                    {transcription.analysis.anomalies.caller.negative.map((negative, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0" />
+                        <p className="text-xs text-red-700">{negative}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No concerning behaviors identified</p>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Suggestions */}
+        {/* Agent Analysis */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Agent Analysis
+              <Badge variant="default">[Agent - Receiver]</Badge>
+            </CardTitle>
+            <CardDescription>
+              Analysis of agent performance and communication effectiveness
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Agent Positive Anomalies */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-green-600 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full" />
+                  Strengths ({transcription.analysis?.anomalies.receiver.positive.length || 0})
+                </h4>
+                {transcription.analysis?.anomalies.receiver.positive.length ? (
+                  <div className="space-y-2">
+                    {transcription.analysis.anomalies.receiver.positive.map((positive, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2 flex-shrink-0" />
+                        <p className="text-xs text-green-700">{positive}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No strengths identified</p>
+                )}
+              </div>
+
+              {/* Agent Negative Anomalies */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-red-600 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-red-500 rounded-full" />
+                  Improvement Areas ({transcription.analysis?.anomalies.receiver.negative.length || 0})
+                </h4>
+                {transcription.analysis?.anomalies.receiver.negative.length ? (
+                  <div className="space-y-2">
+                    {transcription.analysis.anomalies.receiver.negative.map((negative, index) => (
+                      <div key={index} className="flex items-start gap-2">
+                        <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0" />
+                        <p className="text-xs text-red-700">{negative}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No improvement areas identified</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Agent Suggestions Only */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-blue-600">
               <Lightbulb className="w-5 h-5" />
-              Suggestions ({transcription.suggestions.length})
+              Agent Improvement Suggestions ({transcription.suggestions.length})
             </CardTitle>
             <CardDescription>
-              AI-generated recommendations for improvement
+              AI-generated recommendations exclusively for agent performance enhancement
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -203,12 +306,15 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
                 {transcription.suggestions.map((suggestion, index) => (
                   <div key={index} className="flex items-start gap-3">
                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-sm">{suggestion}</p>
+                    <p className="text-sm">
+                      <span className="font-medium text-blue-600">[Agent] </span>
+                      {suggestion}
+                    </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-muted-foreground text-sm">No suggestions available</p>
+              <p className="text-muted-foreground text-sm">No agent suggestions available</p>
             )}
           </CardContent>
         </Card>
