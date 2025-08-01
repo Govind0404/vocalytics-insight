@@ -84,6 +84,54 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
     }
   };
 
+  // Dynamic role identification based on analysis
+  const identifyRoles = () => {
+    if (!transcription.analysis) return null;
+    
+    // Analyze the suggestions and anomalies to determine who is the agent
+    // Suggestions are typically for agents, and receiver positive behaviors often indicate agent skills
+    const receiverHasAgentSkills = transcription.analysis.anomalies.receiver.positive.some(positive => 
+      positive.toLowerCase().includes('professional') || 
+      positive.toLowerCase().includes('helpful') ||
+      positive.toLowerCase().includes('explained') ||
+      positive.toLowerCase().includes('guided') ||
+      positive.toLowerCase().includes('addressed')
+    );
+    
+    const callerHasAgentSkills = transcription.analysis.anomalies.caller.positive.some(positive => 
+      positive.toLowerCase().includes('professional') || 
+      positive.toLowerCase().includes('helpful') ||
+      positive.toLowerCase().includes('explained') ||
+      positive.toLowerCase().includes('guided') ||
+      positive.toLowerCase().includes('addressed')
+    );
+    
+    // If suggestions exist (they're for agents), and receiver shows agent skills, receiver is likely agent
+    if (transcription.suggestions.length > 0 && receiverHasAgentSkills && !callerHasAgentSkills) {
+      return { agentRole: 'Receiver', customerRole: 'Caller' };
+    }
+    
+    // If caller shows more agent skills, caller is likely agent
+    if (callerHasAgentSkills && !receiverHasAgentSkills) {
+      return { agentRole: 'Caller', customerRole: 'Receiver' };
+    }
+    
+    // Default fallback: assume receiver is agent (common in business calls)
+    return { agentRole: 'Receiver', customerRole: 'Caller' };
+  };
+
+  const roles = identifyRoles();
+
+  const getSpeakerLabel = (speaker: 'Caller' | 'Receiver') => {
+    if (!roles) return speaker;
+    return speaker === roles.agentRole ? 'Agent' : 'Customer';
+  };
+
+  const getSpeakerVariant = (speaker: 'Caller' | 'Receiver') => {
+    if (!roles) return 'default';
+    return speaker === roles.agentRole ? 'default' : 'secondary';
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -132,7 +180,7 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
         <CardHeader>
           <CardTitle>Sales Call Transcript</CardTitle>
           <CardDescription>
-            Full transcription with speaker identification (Customer = Caller, Agent = Receiver)
+            Full transcription with dynamic speaker identification (Agent and Customer roles identified based on call analysis)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -154,8 +202,8 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
                   {transcription.analysis.transcript.map((segment, index) => (
                     <div key={index} className="flex gap-3">
                       <div className="flex-shrink-0">
-                        <Badge variant={segment.speaker === 'Caller' ? 'secondary' : 'default'}>
-                          {segment.speaker === 'Caller' ? '[Customer]' : '[Agent]'}
+                        <Badge variant={getSpeakerVariant(segment.speaker)}>
+                          [{getSpeakerLabel(segment.speaker)}]
                         </Badge>
                         <span className="text-xs text-muted-foreground ml-2">{segment.timestamp}</span>
                       </div>
@@ -182,7 +230,7 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Customer Analysis
-              <Badge variant="secondary">[Customer - Caller]</Badge>
+              <Badge variant="secondary">[Customer - {roles?.customerRole || 'Unknown'}]</Badge>
             </CardTitle>
             <CardDescription>
               Analysis of customer behavior and communication patterns
@@ -194,11 +242,17 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
               <div className="space-y-3">
                 <h4 className="text-sm font-medium text-green-600 flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full" />
-                  Positive Behaviors ({transcription.analysis?.anomalies.caller.positive.length || 0})
+                  Positive Behaviors ({roles?.customerRole === 'Caller' ? 
+                    transcription.analysis?.anomalies.caller.positive.length || 0 : 
+                    transcription.analysis?.anomalies.receiver.positive.length || 0})
                 </h4>
-                {transcription.analysis?.anomalies.caller.positive.length ? (
+                {(roles?.customerRole === 'Caller' ? 
+                  transcription.analysis?.anomalies.caller.positive : 
+                  transcription.analysis?.anomalies.receiver.positive)?.length ? (
                   <div className="space-y-2">
-                    {transcription.analysis.anomalies.caller.positive.map((positive, index) => (
+                    {(roles?.customerRole === 'Caller' ? 
+                      transcription.analysis.anomalies.caller.positive : 
+                      transcription.analysis.anomalies.receiver.positive).map((positive, index) => (
                       <div key={index} className="flex items-start gap-2">
                         <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2 flex-shrink-0" />
                         <p className="text-xs text-green-700">{positive}</p>
@@ -214,11 +268,17 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
               <div className="space-y-3">
                 <h4 className="text-sm font-medium text-red-600 flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full" />
-                  Areas for Concern ({transcription.analysis?.anomalies.caller.negative.length || 0})
+                  Areas for Concern ({roles?.customerRole === 'Caller' ? 
+                    transcription.analysis?.anomalies.caller.negative.length || 0 : 
+                    transcription.analysis?.anomalies.receiver.negative.length || 0})
                 </h4>
-                {transcription.analysis?.anomalies.caller.negative.length ? (
+                {(roles?.customerRole === 'Caller' ? 
+                  transcription.analysis?.anomalies.caller.negative : 
+                  transcription.analysis?.anomalies.receiver.negative)?.length ? (
                   <div className="space-y-2">
-                    {transcription.analysis.anomalies.caller.negative.map((negative, index) => (
+                    {(roles?.customerRole === 'Caller' ? 
+                      transcription.analysis.anomalies.caller.negative : 
+                      transcription.analysis.anomalies.receiver.negative).map((negative, index) => (
                       <div key={index} className="flex items-start gap-2">
                         <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0" />
                         <p className="text-xs text-red-700">{negative}</p>
@@ -238,7 +298,7 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               Agent Analysis
-              <Badge variant="default">[Agent - Receiver]</Badge>
+              <Badge variant="default">[Agent - {roles?.agentRole || 'Unknown'}]</Badge>
             </CardTitle>
             <CardDescription>
               Analysis of agent performance and communication effectiveness
@@ -250,11 +310,17 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
               <div className="space-y-3">
                 <h4 className="text-sm font-medium text-green-600 flex items-center gap-2">
                   <div className="w-2 h-2 bg-green-500 rounded-full" />
-                  Strengths ({transcription.analysis?.anomalies.receiver.positive.length || 0})
+                  Strengths ({roles?.agentRole === 'Receiver' ? 
+                    transcription.analysis?.anomalies.receiver.positive.length || 0 : 
+                    transcription.analysis?.anomalies.caller.positive.length || 0})
                 </h4>
-                {transcription.analysis?.anomalies.receiver.positive.length ? (
+                {(roles?.agentRole === 'Receiver' ? 
+                  transcription.analysis?.anomalies.receiver.positive : 
+                  transcription.analysis?.anomalies.caller.positive)?.length ? (
                   <div className="space-y-2">
-                    {transcription.analysis.anomalies.receiver.positive.map((positive, index) => (
+                    {(roles?.agentRole === 'Receiver' ? 
+                      transcription.analysis.anomalies.receiver.positive : 
+                      transcription.analysis.anomalies.caller.positive).map((positive, index) => (
                       <div key={index} className="flex items-start gap-2">
                         <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2 flex-shrink-0" />
                         <p className="text-xs text-green-700">{positive}</p>
@@ -270,11 +336,17 @@ ${transcription.suggestions.length > 0 ? transcription.suggestions.map(s => `•
               <div className="space-y-3">
                 <h4 className="text-sm font-medium text-red-600 flex items-center gap-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full" />
-                  Improvement Areas ({transcription.analysis?.anomalies.receiver.negative.length || 0})
+                  Improvement Areas ({roles?.agentRole === 'Receiver' ? 
+                    transcription.analysis?.anomalies.receiver.negative.length || 0 : 
+                    transcription.analysis?.anomalies.caller.negative.length || 0})
                 </h4>
-                {transcription.analysis?.anomalies.receiver.negative.length ? (
+                {(roles?.agentRole === 'Receiver' ? 
+                  transcription.analysis?.anomalies.receiver.negative : 
+                  transcription.analysis?.anomalies.caller.negative)?.length ? (
                   <div className="space-y-2">
-                    {transcription.analysis.anomalies.receiver.negative.map((negative, index) => (
+                    {(roles?.agentRole === 'Receiver' ? 
+                      transcription.analysis.anomalies.receiver.negative : 
+                      transcription.analysis.anomalies.caller.negative).map((negative, index) => (
                       <div key={index} className="flex items-start gap-2">
                         <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-2 flex-shrink-0" />
                         <p className="text-xs text-red-700">{negative}</p>

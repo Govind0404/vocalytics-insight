@@ -31,6 +31,54 @@ export const ComprehensiveCallAnalysis: React.FC<ComprehensiveCallAnalysisProps>
 }) => {
   const { toast } = useToast();
 
+  // Dynamic role identification based on analysis
+  const identifyRoles = () => {
+    if (!transcription.analysis) return null;
+    
+    // Analyze the suggestions and anomalies to determine who is the agent
+    // Suggestions are typically for agents, and receiver positive behaviors often indicate agent skills
+    const receiverHasAgentSkills = transcription.analysis.anomalies.receiver.positive.some(positive => 
+      positive.toLowerCase().includes('professional') || 
+      positive.toLowerCase().includes('helpful') ||
+      positive.toLowerCase().includes('explained') ||
+      positive.toLowerCase().includes('guided') ||
+      positive.toLowerCase().includes('addressed')
+    );
+    
+    const callerHasAgentSkills = transcription.analysis.anomalies.caller.positive.some(positive => 
+      positive.toLowerCase().includes('professional') || 
+      positive.toLowerCase().includes('helpful') ||
+      positive.toLowerCase().includes('explained') ||
+      positive.toLowerCase().includes('guided') ||
+      positive.toLowerCase().includes('addressed')
+    );
+    
+    // If suggestions exist (they're for agents), and receiver shows agent skills, receiver is likely agent
+    if (transcription.suggestions.length > 0 && receiverHasAgentSkills && !callerHasAgentSkills) {
+      return { agentRole: 'Receiver', customerRole: 'Caller' };
+    }
+    
+    // If caller shows more agent skills, caller is likely agent
+    if (callerHasAgentSkills && !receiverHasAgentSkills) {
+      return { agentRole: 'Caller', customerRole: 'Receiver' };
+    }
+    
+    // Default fallback: assume receiver is agent (common in business calls)
+    return { agentRole: 'Receiver', customerRole: 'Caller' };
+  };
+
+  const roles = identifyRoles();
+
+  const getSpeakerLabel = (speaker: 'Caller' | 'Receiver') => {
+    if (!roles) return speaker;
+    return speaker === roles.agentRole ? 'Agent' : 'Customer';
+  };
+
+  const getSpeakerVariant = (speaker: 'Caller' | 'Receiver') => {
+    if (!roles) return 'outline';
+    return speaker === roles.agentRole ? 'secondary' : 'outline';
+  };
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -209,13 +257,13 @@ ${transcription.transcript}
               {analysis.transcript.map((segment, index) => (
                 <div key={index} className="flex items-start space-x-3">
                   <div className="flex items-center space-x-2 min-w-[120px]">
-                    {segment.speaker === 'Caller' ? (
-                      <User className="h-4 w-4 text-blue-500" />
-                    ) : (
+                    {getSpeakerLabel(segment.speaker) === 'Agent' ? (
                       <UserCheck className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <User className="h-4 w-4 text-blue-500" />
                     )}
-                    <Badge variant={segment.speaker === 'Caller' ? "outline" : "secondary"}>
-                      {segment.speaker}
+                    <Badge variant={getSpeakerVariant(segment.speaker)}>
+                      {getSpeakerLabel(segment.speaker)}
                     </Badge>
                   </div>
                   <div className="flex-1">
